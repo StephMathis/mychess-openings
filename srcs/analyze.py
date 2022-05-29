@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+from multiprocessing import set_forkserver_preload
 from typing import Optional
 import chess
 import chess.pgn
@@ -8,7 +9,7 @@ import chess.engine
 import os
 
 chess_user = 'metaheuristic'
-moves_limit = 3
+moves_limit = 6
 filename_games = '100games.txt'
 
 class MovesTreeNode :
@@ -28,6 +29,20 @@ class MovesTreeNode :
             if child.move == move :
                 return child
         return None
+
+    def getLabel(self) :
+        score, nb  = 0, 0
+        for game in self.games :
+            nb += 1
+            if game.headers['Result'] == '1-0' :
+                score += 1
+            elif game.headers['Result'] == '1/2-1/2' :
+                score += 0.5
+            elif game.headers['Result'] == '0-1' :
+                score += 0
+            else :
+                raise Exception('Unkown score', game.headers)
+        return f'{self.move} {score}/{nb}'
 
     def addChild(self, move: str, game: chess.pgn.Game) :
         child = self.getChild(move)
@@ -68,7 +83,7 @@ class MovesTreeNode :
 
     def mystr(self, indent:str = " ") -> str :
         txt = f'{indent}{{\n'
-        txt += f'{indent}{indent}"name":"{self.move}",\n'
+        txt += f'{indent}{indent}"name":"{self.getLabel()}",\n'
         txt += f'{indent}{indent}"parent":'
         if self.parent is None :
             txt += f'null'
