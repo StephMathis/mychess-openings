@@ -133,6 +133,15 @@ function update(source) {
   // Enter any new links at the parent's previous position.
   link.enter().insert("path", "g")
 	  .attr("class", "link")
+	  .style("stroke-width", function(d) { 
+            if (d.source.ngames >= 0) {
+                var ratio = d.target.ngames/d.source.ngames;
+                var width = Math.ceil(ratio*100/10);
+                return `${width}px`;
+            }
+            
+            return "2px";
+        })
 	  .attr("d", function(d) {
 		var o = {x: source.x0, y: source.y0};
 		return diagonal({source: o, target: o});
