@@ -161,6 +161,10 @@ function update(source) {
 
 // Toggle children on click.
 function click(d) {
+  if (d.url) {
+	  window.open(d.url, '_blank').focus();
+	  return;
+  }
   if (d.children) {
 	d._children = d.children;
 	d.children = null;

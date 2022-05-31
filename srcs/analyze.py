@@ -7,6 +7,7 @@ import chess.pgn
 import chess.engine
 
 import os
+import json
 
 chess_user = 'metaheuristic'
 moves_limit = 6
@@ -30,8 +31,9 @@ class MovesTreeNode :
                 return child
         return None
 
-    def getLabel(self) :
-        score, nb  = 0, 0
+
+    def getStats(self) :
+        nb, score  = 0, 0
         for game in self.games :
             nb += 1
             if game.headers['Result'] == '1-0' :
@@ -42,13 +44,17 @@ class MovesTreeNode :
                 score += 0
             else :
                 raise Exception('Unkown score', game.headers)
+        return (nb, score)
+
+    def getLabel(self) :
+        nb, score = self.getStats()
         return f'{self.move} {score}/{nb}'
 
     def addChild(self, move: str, game: chess.pgn.Game) :
         child = self.getChild(move)
         if child is None :
             child = MovesTreeNode(move, game)
-            child.setParent = self
+            child.setParent(self)
             self.children.add(child)
         else : 
             child.games.add(game)
@@ -80,28 +86,23 @@ class MovesTreeNode :
         ]
     }
     """
-
-    def mystr(self, indent:str = " ") -> str :
-        txt = f'{indent}{{\n'
-        txt += f'{indent}{indent}"name":"{self.getLabel()}",\n'
-        txt += f'{indent}{indent}"parent":'
-        if self.parent is None :
-            txt += f'null'
-        else :
-            txt += f'{self.parent.move}'
-        if len(self.children) > 0 :
-            txt += ",\n"
-            txt += f'{indent}{indent}"children":[\n'
-            txtchildren = [ child.mystr(indent + "  ") for child in self.children]
-            txt += ','.join(txtchildren)
-            txt += f'{indent}{indent}]\n'
-        else :
-            txt += "\n"
-        txt += f'{indent}{indent}}}\n'
-        return txt
+    def to_dict(self) :
+        ngames, score = self.getStats()
+        mydict = {
+            "name": self.getLabel(),
+            "parent": self.parent.getLabel() if self.parent is not None else None,
+            "ngames":ngames,
+            "ratio": score/ngames if ngames > 0 else None
+        }
+        if len(self.games) > 1 or self.parent == None :
+            mydict["children"] = [ child.to_dict() for child in self.children ]
+        if len(self.games) == 1 :
+            game = list(self.games)[0]
+            mydict['url'] = game.headers['Site']
+        return mydict
 
     def __str__(self) -> str :
-        return self.mystr()
+        return json.dumps(self.to_dict(), indent = 4)
 
 moves_tree = MovesTreeNode("start")
 
