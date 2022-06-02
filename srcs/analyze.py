@@ -44,13 +44,18 @@ class MovesTreeNode :
                 score += 0
             else :
                 raise Exception('Unkown score', game.headers)
-        return (nb, score)
+        parent = self.parent
+        while parent is not None and parent.parent is not None :
+            parent = parent.parent
+        nbtotal = len(parent.games) if parent is not None else len(self.games)
+        return (score, nb, nbtotal)
 
     def getLabel(self) :
-        nb, score = self.getStats()
+        (score, nb, nbtotal) = self.getStats()
         return f'{self.move} {score}/{nb}'
 
     def addChild(self, move: str, game: chess.pgn.Game) :
+        self.games.add(game)
         child = self.getChild(move)
         if child is None :
             child = MovesTreeNode(move, game)
@@ -87,12 +92,13 @@ class MovesTreeNode :
     }
     """
     def to_dict(self) :
-        ngames, score = self.getStats()
+        (score, ngames, nbtotal) = self.getStats()
         mydict = {
             "name": self.getLabel(),
             "parent": self.parent.getLabel() if self.parent is not None else None,
             "ngames":ngames,
-            "ratio": score/ngames if ngames > 0 else None
+            "ratio": score/ngames if ngames > 0 else None,
+            "nbtotal": nbtotal
         }
         if len(self.games) > 1 or self.parent == None :
             mydict["children"] = [ child.to_dict() for child in self.children ]

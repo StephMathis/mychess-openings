@@ -134,9 +134,9 @@ function update(source) {
   link.enter().insert("path", "g")
 	  .attr("class", "link")
 	  .style("stroke-width", function(d) { 
-            if (d.source.ngames >= 0) {
-                var ratio = d.target.ngames/d.source.ngames;
-                var width = Math.ceil(ratio*100/10);
+            if (d.source.nbtotal >= 0) {
+                var ratio = d.target.ngames/d.source.nbtotal;
+                var width = Math.ceil(ratio*100/5);
                 return `${width}px`;
             }
             
