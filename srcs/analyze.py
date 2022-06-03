@@ -21,6 +21,7 @@ class MovesTreeNode :
         if game is not None :
             self.games.add(game)
         self.parent = None
+        self.props = {}
 
     def setParent(self, parent) :
         self.parent = parent
@@ -30,6 +31,10 @@ class MovesTreeNode :
             if child.move == move :
                 return child
         return None
+
+    def addProp(self, name, value) -> dict :
+        self.props[name] = value
+        return self.props
 
 
     def getStats(self) :
@@ -100,6 +105,7 @@ class MovesTreeNode :
             "ratio": score/ngames if ngames > 0 else None,
             "nbtotal": nbtotal
         }
+        mydict.update(self.props)
         if len(self.games) > 1 or self.parent == None :
             mydict["children"] = [ child.to_dict() for child in self.children ]
         if len(self.games) == 1 :
@@ -111,6 +117,7 @@ class MovesTreeNode :
         return json.dumps(self.to_dict(), indent = 4)
 
 moves_tree = MovesTreeNode("start")
+moves_tree.addProp("moves_limit", moves_limit)
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 project_dir = os.sep.join([dir_path, '..'])
