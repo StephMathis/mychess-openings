@@ -20,6 +20,12 @@
 	.node text {
 	  font: 12px sans-serif;
 	}
+	.hover {
+		border-width: 2px;
+		margin: -1px;
+		background-color: beige;
+		color: cornflowerblue;
+	}
 
 	.link {
 	  fill: none;
@@ -35,13 +41,10 @@
 
 <!-- load the d3.js library -->	
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
-	
+
+<script src="mytreegames.js"></script>
+
 <script>
-
-var treeData = [
-  {MYOPENINGTREE}
-];
-
 
 // ************** Generate the tree diagram	 *****************
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
@@ -89,7 +92,9 @@ function update(source) {
   var nodeEnter = node.enter().append("g")
 	  .attr("class", "node")
 	  .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-	  .on("click", click);
+	  .on("click", click)
+	  .on("mouseover", mouseover)
+      .on("mouseout", mouseout);
 
   nodeEnter.append("circle")
 	  .attr("r", 1e-6)
@@ -182,6 +187,23 @@ function click(d) {
 	d._children = null;
   }
   update(d);
+}
+
+function mouseover(d) {
+  if (d.opening) {
+    d3.select(this).append("text")
+      .attr("class", "hover")
+      .attr('transform', function(d) {
+  	     return 'translate(35, 3)';
+       })
+      .text("- "+d.opening);
+  }
+}
+
+function mouseout(d) {
+  if (d.opening) {
+    d3.select(this).select("text.hover").remove();
+  }
 }
 
 </script>
