@@ -1110,7 +1110,10 @@ function update(source) {
 
   nodeUpdate.select("circle")
 	  .attr("r", 10)
-	  .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+      .style("fill", function(d) { 
+        if (d.ratio == 0.5) {return "#676767"}  
+        return d.ratio > 0.5 ? "#15C723" : "#ff5733"; 
+        });
 
   nodeUpdate.select("text")
 	  .style("fill-opacity", 1);
