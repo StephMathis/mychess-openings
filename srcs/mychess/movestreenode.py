@@ -1,20 +1,13 @@
-#! /usr/bin/env python3
-
-from multiprocessing import set_forkserver_preload
 from typing import Optional
-import chess
-import chess.pgn
-import chess.engine
-
-import os
 import json
+import chess.pgn
 
-chess_user = 'metaheuristic'
-moves_limit = 6
-filename_games = '100games.txt'
+import openings
+
 
 class MovesTreeNode :
-    def __init__(self, move: str, game : Optional[chess.pgn.Game] = None) :
+    def __init__(self, move: str, game : Optional[chess.pgn.Game] = None, starting_node : bool = False ) :
+        self.starting_node = starting_node
         self.move = move
         self.children = set()        
         self.games = set()
@@ -22,9 +15,13 @@ class MovesTreeNode :
             self.games.add(game)
         self.parent = None
         self.props = {}
+        self.moves = []
+        if not starting_node : 
+            self.moves = [self.move]
 
     def setParent(self, parent) :
         self.parent = parent
+        self.moves = parent.moves + [self.move]
 
     def getChild(self, move: str) :
         for child in self.children :
@@ -55,9 +52,27 @@ class MovesTreeNode :
         nbtotal = len(parent.games) if parent is not None else len(self.games)
         return (score, nb, nbtotal)
 
+    def getMovesAsStr(self) -> str :
+        moves = []
+        count = 1
+        show_count = True
+        for move in self.moves :
+            if show_count :
+                moves.append(f'{int(count)}.')
+            moves.append(move)
+            count += 0.5
+            show_count = not show_count
+        moves_str = " ".join(moves)
+        moves_str = moves_str.replace('N','C').replace('R','T').replace('B','F').replace('K','R').replace('Q','D')
+        return moves_str
+
+
     def getLabel(self) :
         (score, nb, nbtotal) = self.getStats()
-        return f'{self.move} {score}/{nb}'
+        prefix = ''
+        if len(self.moves) % 2 == 0:
+            prefix = f'{int((len(self.moves)+1)/2)}. '
+        return f'{prefix}{self.move} {score}/{nb}'
 
     def addChild(self, move: str, game: chess.pgn.Game) :
         self.games.add(game)
@@ -97,16 +112,22 @@ class MovesTreeNode :
     }
     """
     def to_dict(self) :
+        opening_book = openings.OpeningBook().get_openings()
         (score, ngames, nbtotal) = self.getStats()
+        movesAsStr = self.getMovesAsStr()
+        opening = opening_book.get(movesAsStr, None)
         mydict = {
             "name": self.getLabel(),
             "parent": self.parent.getLabel() if self.parent is not None else None,
             "ngames":ngames,
             "ratio": score/ngames if ngames > 0 else None,
-            "nbtotal": nbtotal
+            "nbtotal": nbtotal,
+            "moves": self.getMovesAsStr()
         }
+        if opening is not None : 
+            mydict['opening'] = opening
         mydict.update(self.props)
-        if len(self.games) > 1 or self.parent == None :
+        if len(self.games) > 1 or self.starting_node == True :
             mydict["children"] = [ child.to_dict() for child in self.children ]
         if len(self.games) == 1 :
             game = list(self.games)[0]
@@ -115,36 +136,3 @@ class MovesTreeNode :
 
     def __str__(self) -> str :
         return json.dumps(self.to_dict(), indent = 4)
-
-moves_tree = MovesTreeNode("start")
-moves_tree.addProp("moves_limit", moves_limit)
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-project_dir = os.sep.join([dir_path, '..'])
-
-#stockfish = os.sep.join([project_dir, 'stockfish_15_win_x64_avx2','stockfish_15_x64_avx2.exe'])
-#engine = chess.engine.SimpleEngine.popen_uci(stockfish)
-
-pgn_file = os.sep.join([project_dir,'games',filename_games])
-with open(pgn_file) as pgn_games :
-    for game in iter(lambda: chess.pgn.read_game(pgn_games), None):
-        headers = game.headers
-        if headers['White'] != chess_user :
-            continue
-        board = chess.Board()
-        current_node = moves_tree
-        move_count = 0
-        for move in game.mainline_moves() :
-            move_count += 1
-            if move_count/2 >= moves_limit :
-                break
-            move_str = board.san(move)
-            board.push(move)
-            current_node = current_node.addChild(move_str, game)
-print(moves_tree)
-
-html_txt = open(os.sep.join([dir_path, 'template_opening_tree.html'])).read()
-
-html_txt = html_txt.replace('{MYOPENINGTREE}', str(moves_tree))
-with open(os.sep.join([dir_path, 'opening_tree.html']),'w') as tree_html_file :
-    print(html_txt, file = tree_html_file)
