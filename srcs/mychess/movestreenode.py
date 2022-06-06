@@ -135,4 +135,4 @@ class MovesTreeNode :
         return mydict
 
     def __str__(self) -> str :
-        return json.dumps(self.to_dict(), indent = 4)
+        return json.dumps(self.to_dict(), indent = 2)

@@ -41,7 +41,7 @@ with open(pgn_file) as pgn_games :
             board.push(move)
             current_node = current_node.addChild(move_str, game)
 
-print(moves_tree)
+#print(moves_tree, flush=True)
 
 javascript_tree = f'var treeData = [{moves_tree}];'
 
