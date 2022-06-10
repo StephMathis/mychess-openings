@@ -7,6 +7,19 @@
 
     <style>
 	
+	div.tooltip {	
+	 position: absolute;
+     text-align: center;
+     padding: .5rem;
+     background: #d9d8d9;
+     color: #10019d;
+     border: 1px solid #10019d;
+     border-radius: 8px;
+     pointer-events: none;
+     font-size: 1.3rem;	
+	 font: 14px sans-serif;		
+	}
+
 	.node {
 		cursor: pointer;
 	}
@@ -45,6 +58,10 @@
 <script src="mytreegames.js"></script>
 
 <script>
+
+var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);
 
 // ************** Generate the tree diagram	 *****************
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
@@ -201,20 +218,26 @@ function click(d) {
 
 function mouseover(d) {
   if (d.opening) {
-    d3.select(this).append("text")
-      .attr("class", "hover")
-      .attr('transform', function(d) {
-  	     return 'translate(35, 3)';
-       })
-      .text("- "+d.opening);
+    div.transition()		
+                .duration(200)		
+                .style("opacity", .9);		
+            div	.html(d.opening)	
+                .style("left", (d3.event.pageX) + "px")		
+                .style("top", (d3.event.pageY - 28) + "px");	
   }
 }
 
 function mouseout(d) {
   if (d.opening) {
-    d3.select(this).select("text.hover").remove();
+    d3.select(this).transition()
+               .duration('50')
+               .attr('opacity', '1');
+          div.transition()
+               .duration('50')
+               .style("opacity", 0);
   }
 }
+
 
 function score2color(score) {
 	var perc = score * 100
